@@ -1,0 +1,8 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');const context={window:{}};vm.runInNewContext(fs.readFileSync('dist/metro-data.js','utf8'),context);const {routes,stations,find}=context.window.Metro;
+assert.equal(routes.length,10);const expected={R:29,BL:23,G:20,O:26,BR:24,Y:14,LB:12,V:14,K:9,A:22};const codes=[];for(const r of routes){assert.equal(r.stations.length,expected[r.id],r.name);for(const s of r.stations){assert.ok(s.name);assert.ok(!codes.includes(s.code),'duplicate '+s.code);codes.push(s.code);assert.ok(find({query:s.code,line:r.id}).some(x=>x.name===s.name),'unreachable '+s.code);}}
+assert.equal(new Set(stations.map(s=>s.name)).size,stations.length);assert.equal(routes.slice(0,5).reduce((n,r)=>n+r.stations.length,0)-4,118);
+for(const name of ['新北投','小碧潭','蘆洲','廣慈/奉天宮','鶯桃福德','淡水漁人碼頭','十四張','老街溪'])assert.ok(find({query:name}).some(s=>s.name===name));
+assert.equal(find({query:'臺北101／世貿站'})[0].name,'台北101/世貿');assert.equal(find({query:'R03'})[0].name,'台北101/世貿');assert.equal(find({query:'松山',line:'BL'}).length,0);assert.equal(find({query:'不存在的站'}).length,0);assert.equal(find({saved:['松山']}).length,1);assert.equal(find({saved:[]}).length,0);assert.ok(find({query:'南京復興'})[0].stops.some(s=>s.line==='BR'));assert.ok(find({query:'南京復興'})[0].stops.some(s=>s.line==='G'));
+assert.ok(!codes.includes('A14'));assert.ok(!codes.includes('A23'));
+console.log(`PASS: ${routes.length} routes, ${stations.length} unique station names, ${codes.length} station codes; all codes searchable; 118 Taipei Metro stations; branches, transfers, aliases, saved/empty filters.`);
+
